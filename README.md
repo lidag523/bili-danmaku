@@ -72,7 +72,6 @@ bili-danmaku [直播间号]
 
 也可以用环境变量 `BILI_DANMAKU_COOKIE` 指到别的文件。
 
-> cookie 等于账号登录凭证，别提交到仓库里。
 
 ## 日志
 
