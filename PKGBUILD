@@ -1,7 +1,7 @@
 # Maintainer: Lavalucky <you@example.com>
 pkgname=bili-danmaku
 pkgver=0.1.0
-pkgrel=16
+pkgrel=17
 pkgdesc="B站直播弹幕悬浮窗 (弹幕/进场/在线人数)"
 arch=('any')
 url="https://live.bilibili.com/"

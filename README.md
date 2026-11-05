@@ -1,3 +1,5 @@
+> **纯 AI 生成（DeepSeek）**
+
 # bili-danmaku
 
 B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
