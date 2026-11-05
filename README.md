@@ -24,7 +24,7 @@ makepkg -si
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku_0.1.0_all.deb
+sudo apt install ./bili-danmaku-0.1.0.deb
 ```
 
 需要 `python3-pyside6.qtwidgets`，apt 会自动拉。
@@ -33,7 +33,7 @@ sudo apt install ./bili-danmaku_0.1.0_all.deb
 
 ```bash
 chmod +x bili-danmaku-0.1.0-x86_64.AppImage
-./bili-danmaku-0.1.0-x86_64.AppImage
+./bili-danmaku-0.1.0.AppImage
 ```
 
 Python 和 Qt 都打包在里面了，什么发行版都能跑。
