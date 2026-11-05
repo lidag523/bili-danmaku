@@ -11,3 +11,5 @@ src/
 # 千万别提交
 cookie.txt
 *.cookie
+
+dist/
