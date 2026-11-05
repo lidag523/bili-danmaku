@@ -18,7 +18,7 @@ B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 ### Arch Linux
 
 ```bash
-cd arch && makepkg -si
+makepkg -si
 ```
 
 ### 源码运行
