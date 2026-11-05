@@ -18,7 +18,7 @@ B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 ### Arch Linux
 
 ```bash
-makepkg -si
+sudo pacman -U bili-danmaku-0.1.0.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
@@ -43,7 +43,7 @@ Python 和 Qt 都打包在里面了，什么发行版都能跑。
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install PySide6 requests websocket-client brotli
-.venv/bin/python main.py 31641927
+.venv/bin/python main.py [直播间号]
 ```
 
 ## 用法
