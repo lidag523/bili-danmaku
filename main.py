@@ -418,10 +418,17 @@ class DanmakuWindow(QWidget):
 
 
 def main():
-    room = int(sys.argv[1]) if len(sys.argv) > 1 else 31641927
     setup_log()
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+
+    if len(sys.argv) > 1 and sys.argv[1].strip().isdigit():
+        room = int(sys.argv[1].strip())
+    else:
+        text, ok = QInputDialog.getText(None, "直播间号", "输入直播间号：")
+        if not ok or not text.strip().isdigit():
+            sys.exit(0)
+        room = int(text.strip())
 
     w = DanmakuWindow(room)
     w.show()

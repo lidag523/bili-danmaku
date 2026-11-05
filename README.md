@@ -33,7 +33,7 @@ python3 -m venv .venv
 bili-danmaku [直播间号]
 ```
 
-不填默认 `31641927`。
+不填会弹窗让你输。
 
 窗口上：
 

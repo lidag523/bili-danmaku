@@ -1,7 +1,7 @@
 # Maintainer: Lavalucky <you@example.com>
 pkgname=bili-danmaku
 pkgver=0.1.0
-pkgrel=15
+pkgrel=16
 pkgdesc="B站直播弹幕悬浮窗 (弹幕/进场/在线人数)"
 arch=('any')
 url="https://live.bilibili.com/"
@@ -29,7 +29,7 @@ B 站直播弹幕悬浮窗。
 用法:
     bili-danmaku [直播间号]
 
-默认 31641927。窗口内右键可以换房间、重连、清屏。
+不填会弹窗让你输房间号。窗口内右键可以换房间、重连、清屏。
 
 想显示完整用户名需要登录 cookie, 放到:
     ~/.config/bili-danmaku/cookie.txt
