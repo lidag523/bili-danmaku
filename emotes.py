@@ -56,7 +56,8 @@ class EmoteStore(QObject):
         super().__init__()
         self.room_id = room_id
         self.map = {}       # 全部表情 token -> (本地路径, 宽, 高)
-        self.live = {}      # 只含直播间通用表情：这类发出去观众端才会显示成图片
+        self.live = {}      # 只含直播间通用表情
+        self.order = []     # 面板显示顺序：按表情包分组，小黄脸排前面
         self._bare = {}     # 表情名 -> token（整条消息只有一个表情时用）
         os.makedirs(CACHE_DIR, exist_ok=True)
         threading.Thread(target=self._load, daemon=True).start()
@@ -65,6 +66,7 @@ class EmoteStore(QObject):
     def _load(self):
         idx = {}
         live_tokens = set()
+        groups = []   # [(包名, [token, ...]), ...]
         try:
             s = bili.new_session()
         except Exception:
@@ -74,10 +76,14 @@ class EmoteStore(QObject):
             j = bili.req(s, "https://api.bilibili.com/x/emote/user/panel/web",
                          {"business": "reply"})
             for pkg in (j.get("data") or {}).get("packages") or []:
+                toks = []
                 for e in pkg.get("emote") or []:
                     t, u = _token(e.get("text")), e.get("url")
                     if t and u:
                         idx.setdefault(t, u)
+                        toks.append(t)
+                if toks:
+                    groups.append((pkg.get("text") or "", toks))
         except Exception:
             pass
         # 2) 直播间通用表情，token 形如 [啊]
@@ -86,6 +92,7 @@ class EmoteStore(QObject):
                 s, "https://api.live.bilibili.com/xlive/web-ucenter/v2/emoticon/GetEmoticons",
                 {"platform": "pc", "room_id": self.room_id})
             for pkg in (j.get("data") or {}).get("data") or []:
+                toks = []
                 for e in pkg.get("emoticons") or []:
                     u = e.get("url")
                     tok = _token(e.get("emoji"))
@@ -93,6 +100,9 @@ class EmoteStore(QObject):
                         idx.setdefault(tok, u)
                         live_tokens.add(tok)
                         self._bare.setdefault(_norm(e.get("emoji")), tok)
+                        toks.append(tok)
+                if toks:
+                    groups.append((pkg.get("pkg_name") or "直播间通用", toks))
         except Exception:
             pass
         if not idx:
@@ -109,6 +119,19 @@ class EmoteStore(QObject):
                 m[token] = (path, w or EMOJI_H, h or EMOJI_H)
         self.map = m          # 一次性替换，避免边下边改
         self.live = {t: v for t, v in m.items() if t in live_tokens}
+
+        groups.sort(key=lambda g: (0 if "小黄脸" in g[0] else 1))
+        seen = set()
+        order = []
+        for _, toks in groups:
+            for t in toks:
+                if t in m and t not in seen:
+                    seen.add(t)
+                    order.append(t)
+        for t in m:                      # 兜底，别漏
+            if t not in seen:
+                order.append(t)
+        self.order = order
         if m:
             self.ready.emit()
 

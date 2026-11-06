@@ -370,7 +370,8 @@ class DanmakuWindow(QWidget):
         grid.setSpacing(2)
         grid.setContentsMargins(0, 0, 0, 0)
 
-        pick = getattr(self.emotes, "live", None) or self.emotes.map
+        order = getattr(self.emotes, "order", None) or list(self.emotes.map)
+        pick = {t: self.emotes.map[t] for t in order if t in self.emotes.map}
         for i, (token, (path, w, h)) in enumerate(list(pick.items())):
             b = QToolButton()
             b.setIcon(QIcon(path))
@@ -400,7 +401,7 @@ class DanmakuWindow(QWidget):
             self.status.setText("表情还没加载完")
             return
         menu = getattr(self, "_emoji_menu", None)
-        if menu is None or getattr(self, "_emoji_n", -1) != len(getattr(self.emotes, "live", None) or self.emotes.map):
+        if menu is None or getattr(self, "_emoji_n", -1) != len(getattr(self.emotes, "order", None) or self.emotes.map):
             menu = self._build_emoji_menu()
         menu.exec(self.emoji_btn.mapToGlobal(QPoint(-64, -244)))
 
