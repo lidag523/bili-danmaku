@@ -15,6 +15,8 @@ from danmaku import DanmakuClient
 from emotes import EmoteStore
 
 MAX_LINES = 60
+MAX_ENTER = 4      # 进场消息最多留几条
+ENTER_H = 88       # 进场区域高度(px)
 COLORS = ["#7fb2ff", "#8ee6a2", "#ffd479", "#ff9ecb", "#b9a2ff",
           "#7fe3e3", "#ffab8f", "#c8e08b"]
 
@@ -65,6 +67,8 @@ class DanmakuWindow(QWidget):
         super().__init__()
         self.room = room
         self.lines = []
+        self.enter_lines = []
+        self._show_enter = True
         self.popularity = 0
         self.watched = ""
         self.live = 0
@@ -137,6 +141,22 @@ class DanmakuWindow(QWidget):
         self.view.installEventFilter(self)
         root.addWidget(self.view, 1)
 
+        # 进场消息单独一块：小字、置灰、只留最近几条，不抢弹幕的地方
+        self.enter_view = QTextBrowser()
+        self.enter_view.setOpenExternalLinks(False)
+        self.enter_view.setFrameShape(QTextBrowser.NoFrame)
+        self.enter_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.enter_view.setStyleSheet(
+            "background:transparent;border:none;color:#7d8a9c;font-size:11px;")
+        self.enter_view.setFont(QFont("Noto Sans CJK SC", 8))
+        self.enter_view.setTextInteractionFlags(Qt.NoTextInteraction)
+        self.enter_view.setFocusPolicy(Qt.NoFocus)
+        self.enter_view.setFixedHeight(ENTER_H)
+        self.enter_view.viewport().installEventFilter(self)
+        self.enter_view.installEventFilter(self)
+        self.enter_view.hide()
+        root.addWidget(self.enter_view, 0)
+
         bottom = QHBoxLayout()
         bottom.setContentsMargins(0, 0, 0, 0)
         self.status = QLabel("")
@@ -176,8 +196,7 @@ class DanmakuWindow(QWidget):
             col = "#ff6b6b" if data.get("admin") else color_of(data.get("user"))
             self.add_line(col, name, self.emotes.render(data.get("text", "")))
         elif kind == "enter":
-            name = data.get("user", "")
-            self.add_line("#6f7c8f", "%s 进入直播间" % esc(name))
+            self.add_enter("%s 进入直播间" % data.get("user", ""))
         elif kind == "rank":
             users = data.get("users") or []
             if users:
@@ -233,6 +252,28 @@ class DanmakuWindow(QWidget):
             '<div style="line-height:150%%">%s</div>' % body)
         sb = self.view.verticalScrollBar()
         sb.setValue(sb.maximum())
+
+    def add_enter(self, text):
+        self.enter_lines.append(
+            '<span style="color:#7d8a9c">%s</span>' % esc(text))
+        if len(self.enter_lines) > MAX_ENTER:
+            self.enter_lines = self.enter_lines[-MAX_ENTER:]
+        self.render_enter()
+
+    def render_enter(self):
+        if not (self._show_enter and self.enter_lines):
+            self.enter_view.hide()
+            return
+        self.enter_view.show()
+        self.enter_view.setHtml(
+            '<div style="line-height:130%%">%s</div>'
+            % "<br>".join(self.enter_lines))
+        sb = self.enter_view.verticalScrollBar()
+        sb.setValue(sb.maximum())
+
+    def toggle_enter(self, on):
+        self._show_enter = bool(on)
+        self.render_enter()
 
     def schedule_reconnect(self):
         from PySide6.QtCore import QTimer
@@ -371,7 +412,12 @@ class DanmakuWindow(QWidget):
         m.addAction("换个直播间…", self.change_room)
         m.addAction("填 / 改 cookie…", self.set_cookie)
         m.addAction("重新连接", self.reconnect)
-        m.addAction("清屏", lambda: (self.lines.clear(), self.render()))
+        act = m.addAction("显示进场消息")
+        act.setCheckable(True)
+        act.setChecked(self._show_enter)
+        act.toggled.connect(self.toggle_enter)
+        m.addAction("清屏", lambda: (self.lines.clear(), self.enter_lines.clear(),
+                                    self.render(), self.render_enter()))
         m.addSeparator()
         m.addAction("退出", self.close)
         m.exec(pos)
