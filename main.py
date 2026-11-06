@@ -73,6 +73,7 @@ class DanmakuWindow(QWidget):
         self.lines = []
         self.enter_lines = []
         self._show_enter = True
+        self._history_room = None
         self.popularity = 0
         self.watched = ""
         self.live = 0
@@ -203,6 +204,8 @@ class DanmakuWindow(QWidget):
 
     # ---------- 事件 ----------
     def on_event(self, kind, data):
+        if kind == "room":
+            self.fetch_history()
         if kind in ("status", "error", "room", "room_online"):
             log.info("%s %s", kind, data)
         if kind == "room":
@@ -225,6 +228,14 @@ class DanmakuWindow(QWidget):
             name = esc(data.get("user", ""))
             col = "#ff6b6b" if data.get("admin") else color_of(data.get("user"))
             self.add_line(col, name, self.emotes.render(data.get("text", "")))
+        elif kind == "history":
+            if data.get("room") != self.room:
+                return
+            for it in data.get("items") or []:
+                name = it.get("user", "")
+                col = "#ff6b6b" if it.get("admin") else color_of(name)
+                self.add_line(col, esc(name),
+                              self.emotes.render(it.get("text", "")))
         elif kind == "sent":
             if data.get("ok"):
                 self.status.setText("已发送：%s" % data.get("text", ""))
@@ -391,6 +402,24 @@ class DanmakuWindow(QWidget):
         if menu is None or getattr(self, "_emoji_n", -1) != len(self.emotes.map):
             menu = self._build_emoji_menu()
         menu.exec(self.emoji_btn.mapToGlobal(QPoint(-64, -244)))
+
+    def fetch_history(self):
+        """换房间后补一段历史弹幕，同一个房间只拉一次。"""
+        room = self.room
+        if self._history_room == room:
+            return
+        self._history_room = room
+
+        def work():
+            try:
+                import bili
+                s = bili.new_session()
+                items = bili.get_history(s, room)
+            except Exception:
+                items = []
+            self.bridge.event.emit("history", {"items": items, "room": room})
+
+        threading.Thread(target=work, daemon=True).start()
 
     def send_danmaku(self):
         text = self.input.text().strip()
@@ -594,6 +623,7 @@ class DanmakuWindow(QWidget):
         if ok and r.strip().isdigit():
             self.room = int(r.strip())
             self.reset_room_state()
+            self._history_room = None
             self.reconnect()
 
     def reset_room_state(self):

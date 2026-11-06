@@ -89,6 +89,23 @@ def get_danmu_info(s, room_id):
     return r, dict(s.cookies)
 
 
+def get_history(s, room_id, limit=30):
+    """取直播间最近的弹幕（B站只提供最近一小段）。"""
+    try:
+        j = req(s, "https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory",
+                {"roomid": room_id, "room_type": 0})
+    except Exception:
+        return []
+    out = []
+    for x in (j.get("data") or {}).get("room") or []:
+        t = (x.get("text") or "").strip()
+        if not t:
+            continue
+        out.append({"user": x.get("nickname") or "", "text": t,
+                    "admin": bool(x.get("isadmin"))})
+    return out[-limit:]
+
+
 def send_danmaku(s, room_id, msg, color=16777215, mode=1, fontsize=25):
     """发一条弹幕。返回 (是否成功, 提示信息)。"""
     jct = dict(s.cookies).get("bili_jct", "")
