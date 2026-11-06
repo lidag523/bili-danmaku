@@ -49,6 +49,31 @@ def make_packet(op, body: bytes):
     return struct.pack(">IHHII", 16 + len(body), 16, 1, op, 1) + body
 
 
+def find_reply_uname(node):
+    """在整个消息里递归找非空的 reply_uname（它藏在 extra 的 JSON 字符串里）。"""
+    if isinstance(node, dict):
+        v = node.get("reply_uname")
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+        for v in node.values():
+            r = find_reply_uname(v)
+            if r:
+                return r
+    elif isinstance(node, list):
+        for v in node:
+            r = find_reply_uname(v)
+            if r:
+                return r
+    elif isinstance(node, str):
+        t = node.strip()
+        if t.startswith("{") and "reply_uname" in t:
+            try:
+                return find_reply_uname(json.loads(t))
+            except Exception:
+                return ""
+    return ""
+
+
 class DanmakuClient:
     """后台线程收弹幕, 通过回调抛事件"""
 
@@ -194,12 +219,7 @@ class DanmakuClient:
                 admin = bool(info[2][2])
             except Exception:
                 return
-            reply = ""
-            try:
-                extra = json.loads(info[0][15].get("extra") or "{}")
-                reply = extra.get("reply_uname") or ""
-            except Exception:
-                pass
+            reply = find_reply_uname(j)
             self._emit("danmaku", user=user, text=text, admin=admin,
                        reply=reply)
         elif cmd == "INTERACT_WORD":
