@@ -96,11 +96,14 @@ class EmoteStore(QObject):
                 for e in pkg.get("emoticons") or []:
                     u = e.get("url")
                     tok = _token(e.get("emoji"))
+                    uniq = e.get("emoticon_unique") or ""
                     if tok and u:
-                        idx.setdefault(tok, u)
-                        live_tokens.add(tok)
+                        idx.setdefault(tok, u)   # 渲染用，全收
                         self._bare.setdefault(_norm(e.get("emoji")), tok)
-                        toks.append(tok)
+                        # 官方表情(official_*)发出去显示不出来，面板里不要
+                        if not uniq.startswith("official"):
+                            live_tokens.add(tok)
+                            toks.append(tok)
                 if toks:
                     groups.append((pkg.get("pkg_name") or "直播间通用", toks, True))
         except Exception:
