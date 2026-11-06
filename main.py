@@ -91,6 +91,7 @@ class DanmakuWindow(QWidget):
         self.bridge.event.connect(self.on_event)
         self.emotes = EmoteStore(room)
         self.emotes.ready.connect(self.render)
+        self.emotes.ready.connect(self._warm_emoji_menu)
         conf_dir()
         self.client = DanmakuClient(room, lambda k, w: self.bridge.event.emit(k, w))
         self.client.start()
@@ -307,34 +308,47 @@ class DanmakuWindow(QWidget):
         self._show_enter = bool(on)
         self.render_enter()
 
+    def _warm_emoji_menu(self):
+        try:
+            if getattr(self, "_emoji_menu", None) is None and self.emotes.map:
+                self._build_emoji_menu()
+        except Exception:
+            pass
+
     def insert_emote(self, token):
         self.input.insert(token)
         self.input.setFocus()
 
-    def show_emotes(self):
-        if not getattr(self.emotes, "map", None):
-            self.status.setText("表情还没加载完")
-            return
-
+    def _build_emoji_menu(self):
+        """表情面板只建一次，后面复用，避免每次点击都重排几百个按钮。"""
         menu = QMenu(self)
+        menu.setWindowFlags(menu.windowFlags() | Qt.FramelessWindowHint
+                            | Qt.NoDropShadowWindowHint)
+        menu.setAttribute(Qt.WA_TranslucentBackground, True)
         menu.setStyleSheet(
-            "QMenu{background:#1b1e26;border:1px solid #2c3140;padding:4px;}"
-            "QScrollBar:vertical{background:transparent;width:6px;}"
+            "QMenu{background:transparent;border:none;padding:0;}"
+            "QScrollBar:vertical{background:transparent;width:6px;margin:2px;}"
             "QScrollBar::handle:vertical{background:#3a4356;border-radius:3px;}"
-            "QScrollBar::add-line,QScrollBar::sub-line{height:0;}"
+            "QScrollBar:horizontal{background:transparent;height:6px;margin:2px;}"
+            "QScrollBar::handle:horizontal{background:#3a4356;border-radius:3px;}"
+            "QScrollBar::add-line,QScrollBar::sub-line{height:0;width:0;}"
             "QScrollBar::add-page,QScrollBar::sub-page{background:transparent;}")
 
-        box = QWidget()
-        box.setFixedSize(252, 224)
+        box = QFrame()
+        box.setObjectName("emojiBox")
+        box.setFixedSize(262, 226)
+        box.setStyleSheet("#emojiBox{background:rgba(27,30,38,242);"
+                          "border:1px solid #2c3140;border-radius:10px;}")
         outer = QVBoxLayout(box)
-        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setContentsMargins(8, 8, 8, 8)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll.setStyleSheet("QScrollArea{background:transparent;border:none;}"
                              "QScrollArea > QWidget > QWidget{background:transparent;}")
-        # 右下角的黑方块就是滚动区 corner widget，塞个空控件盖掉
         corner = QWidget()
         corner.setStyleSheet("background:transparent;")
         scroll.setCornerWidget(corner)
@@ -353,8 +367,8 @@ class DanmakuWindow(QWidget):
             b.setToolTip(token)
             b.setCursor(Qt.PointingHandCursor)
             b.setStyleSheet(
-                "QToolButton{background:transparent;border:none;}"
-                "QToolButton:hover{background:#2a3345;border-radius:4px;}")
+                "QToolButton{background:transparent;border:none;border-radius:5px;}"
+                "QToolButton:hover{background:#2a3345;}")
             b.clicked.connect(lambda _=False, t=token: (self.insert_emote(t),
                                                         menu.close()))
             grid.addWidget(b, i // 8, i % 8)
@@ -365,7 +379,18 @@ class DanmakuWindow(QWidget):
         act = QWidgetAction(menu)
         act.setDefaultWidget(box)
         menu.addAction(act)
-        menu.exec(self.emoji_btn.mapToGlobal(QPoint(-60, -236)))
+        self._emoji_menu = menu
+        self._emoji_n = len(self.emotes.map)
+        return menu
+
+    def show_emotes(self):
+        if not getattr(self.emotes, "map", None):
+            self.status.setText("表情还没加载完")
+            return
+        menu = getattr(self, "_emoji_menu", None)
+        if menu is None or getattr(self, "_emoji_n", -1) != len(self.emotes.map):
+            menu = self._build_emoji_menu()
+        menu.exec(self.emoji_btn.mapToGlobal(QPoint(-64, -244)))
 
     def send_danmaku(self):
         text = self.input.text().strip()
