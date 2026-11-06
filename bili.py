@@ -93,7 +93,7 @@ def send_danmaku(s, room_id, msg, color=16777215, mode=1, fontsize=25):
     """发一条弹幕。返回 (是否成功, 提示信息)。"""
     jct = dict(s.cookies).get("bili_jct", "")
     if not jct:
-        return False, "没有登录 cookie（缺 bili_jct），先填 cookie"
+        return False, "未填写Cookie"
     data = {
         "bubble": "0", "msg": msg, "color": str(color), "mode": str(mode),
         "fontsize": str(fontsize), "rnd": str(int(time.time())),

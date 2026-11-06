@@ -6,11 +6,13 @@ import logging
 import threading
 from logging.handlers import RotatingFileHandler
 
-from PySide6.QtCore import Qt, QObject, Signal, QPoint, QEvent
-from PySide6.QtGui import QColor, QFont, QPainter, QBrush, QPen, QAction
+from PySide6.QtCore import Qt, QObject, Signal, QPoint, QEvent, QSize
+from PySide6.QtGui import (QColor, QFont, QPainter, QBrush, QPen, QAction,
+                           QIcon)
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextBrowser, QPushButton, QMenu,
-                               QInputDialog, QSizeGrip, QLineEdit)
+                               QInputDialog, QSizeGrip, QLineEdit, QFrame,
+                               QGridLayout, QScrollArea, QToolButton)
 
 from danmaku import DanmakuClient
 from emotes import EmoteStore
@@ -165,7 +167,23 @@ class DanmakuWindow(QWidget):
             "border-radius:6px;color:#e8eef7;font-size:12px;padding:3px 6px;}"
             "QLineEdit:focus{border:1px solid #4a6fa5;}")
         self.input.returnPressed.connect(self.send_danmaku)
-        root.addWidget(self.input, 0)
+
+        input_row = QHBoxLayout()
+        input_row.setSpacing(4)
+        input_row.setContentsMargins(0, 0, 0, 0)
+        input_row.addWidget(self.input, 1)
+
+        self.emoji_btn = QPushButton("😊")
+        self.emoji_btn.setFixedSize(26, 26)
+        self.emoji_btn.setCursor(Qt.PointingHandCursor)
+        self.emoji_btn.setToolTip("插入表情")
+        self.emoji_btn.setStyleSheet(
+            "QPushButton{background:rgba(255,255,255,18);border:1px solid #2c3140;"
+            "border-radius:6px;font-size:13px;}"
+            "QPushButton:hover{background:#2a3345;}")
+        self.emoji_btn.clicked.connect(self.show_emotes)
+        input_row.addWidget(self.emoji_btn, 0)
+        root.addLayout(input_row)
 
         bottom = QHBoxLayout()
         bottom.setContentsMargins(0, 0, 0, 0)
@@ -290,9 +308,70 @@ class DanmakuWindow(QWidget):
         self._show_enter = bool(on)
         self.render_enter()
 
+    def insert_emote(self, token):
+        self.input.insert(token)
+        self.input.setFocus()
+
+    def show_emotes(self):
+        if getattr(self, "_emoji_pop", None):
+            self._emoji_pop.close()
+            self._emoji_pop = None
+            return
+        if not getattr(self.emotes, "map", None):
+            self.status.setText("表情还没加载完")
+            return
+
+        pop = QFrame(self, Qt.Popup)
+        pop.setStyleSheet("QFrame{background:#1b1e26;border:1px solid #2c3140;"
+                          "border-radius:8px;}")
+        lay = QVBoxLayout(pop)
+        lay.setContentsMargins(6, 6, 6, 6)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("QScrollArea{background:transparent;border:none;}")
+        inner = QWidget()
+        grid = QGridLayout(inner)
+        grid.setSpacing(2)
+        grid.setContentsMargins(0, 0, 0, 0)
+
+        for i, (token, (path, w, h)) in enumerate(list(self.emotes.map.items())):
+            b = QToolButton()
+            b.setIcon(QIcon(path))
+            b.setIconSize(QSize(22, 22))
+            b.setFixedSize(28, 28)
+            b.setToolTip(token)
+            b.setCursor(Qt.PointingHandCursor)
+            b.setStyleSheet(
+                "QToolButton{background:transparent;border:none;}"
+                "QToolButton:hover{background:#2a3345;border-radius:4px;}")
+            b.clicked.connect(lambda _=False, t=token: self.insert_emote(t))
+            grid.addWidget(b, i // 8, i % 8)
+
+        scroll.setWidget(inner)
+        lay.addWidget(scroll)
+        pop.resize(258, 232)
+
+        g = self.input.mapToGlobal(QPoint(0, 0))
+        pop.move(g.x(), max(0, g.y() - 238))
+        pop.show()
+        pop.destroyed.connect(lambda *_: setattr(self, "_emoji_pop", None))
+        self._emoji_pop = pop
+
     def send_danmaku(self):
         text = self.input.text().strip()
         if not text:
+            return
+        try:
+            import bili
+            ck = bili.load_cookie()
+        except Exception:
+            ck = {}
+        if not ck.get("bili_jct"):
+            # 没填 cookie 就别发出去了，直接提示
+            self.status.setText("未填写Cookie")
+            self.add_line("#ff8f8f", "未填写Cookie（右键 → 填 / 改 cookie…）")
             return
         self.input.clear()
         room = self.room

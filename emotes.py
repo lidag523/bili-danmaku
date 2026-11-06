@@ -99,11 +99,13 @@ class EmoteStore(QObject):
         items = list(idx.items())
         with ThreadPoolExecutor(max_workers=8) as pool:
             results = list(pool.map(lambda kv: (kv[0], self._fetch(kv[1])), items))
+        m = {}
         for token, path in results:
             if path:
                 w, h = _png_size(path)
-                self.map[token] = (path, w or EMOJI_H, h or EMOJI_H)
-        if self.map:
+                m[token] = (path, w or EMOJI_H, h or EMOJI_H)
+        self.map = m          # 一次性替换，避免边下边改
+        if m:
             self.ready.emit()
 
     def _fetch(self, url):
