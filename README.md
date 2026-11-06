@@ -27,16 +27,14 @@ sudo pacman -U ./bili-danmaku-0.1.0.pkg.tar.zst
 sudo apt install ./bili-danmaku-0.1.0.deb
 ```
 
-需要 `python3-pyside6.qtwidgets`，apt 会自动拉。
 
-### AppImage（免安装）
+### AppImage
 
 ```bash
 chmod +x bili-danmaku-0.1.0-x86_64.AppImage
 ./bili-danmaku-0.1.0.AppImage
 ```
 
-Python 和 Qt 都打包在里面了，什么发行版都能跑。
 
 ### 源码运行
 
@@ -52,7 +50,6 @@ python3 -m venv .venv
 bili-danmaku [直播间号]
 ```
 
-不填会弹窗让你输。
 
 窗口上：
 
@@ -62,7 +59,7 @@ bili-danmaku [直播间号]
 
 ## 登录 cookie（可选）
 
-不登录也能看弹幕，只是用户名会被 B 站打码成 `四***` 这样。
+不登录也能看弹幕，只是用户名会被 B 站打码成 `X***` 这样。
 
 右键 → 「填 / 改 cookie…」，把浏览器请求头里那一整行 Cookie 粘进去（至少要含 `SESSDATA`）。存在：
 
