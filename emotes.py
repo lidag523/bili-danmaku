@@ -55,7 +55,8 @@ class EmoteStore(QObject):
     def __init__(self, room_id):
         super().__init__()
         self.room_id = room_id
-        self.map = {}       # token -> (本地路径, 宽, 高)
+        self.map = {}       # 全部表情 token -> (本地路径, 宽, 高)
+        self.live = {}      # 只含直播间通用表情：这类发出去观众端才会显示成图片
         self._bare = {}     # 表情名 -> token（整条消息只有一个表情时用）
         os.makedirs(CACHE_DIR, exist_ok=True)
         threading.Thread(target=self._load, daemon=True).start()
@@ -63,6 +64,7 @@ class EmoteStore(QObject):
     # ---------- 拉取 ----------
     def _load(self):
         idx = {}
+        live_tokens = set()
         try:
             s = bili.new_session()
         except Exception:
@@ -89,6 +91,7 @@ class EmoteStore(QObject):
                     tok = _token(e.get("emoji"))
                     if tok and u:
                         idx.setdefault(tok, u)
+                        live_tokens.add(tok)
                         self._bare.setdefault(_norm(e.get("emoji")), tok)
         except Exception:
             pass
@@ -105,6 +108,7 @@ class EmoteStore(QObject):
                 w, h = _png_size(path)
                 m[token] = (path, w or EMOJI_H, h or EMOJI_H)
         self.map = m          # 一次性替换，避免边下边改
+        self.live = {t: v for t, v in m.items() if t in live_tokens}
         if m:
             self.ready.emit()
 
