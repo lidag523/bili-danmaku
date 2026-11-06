@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QInputDialog, QSizeGrip)
 
 from danmaku import DanmakuClient
+from emotes import EmoteStore
 
 MAX_LINES = 60
 COLORS = ["#7fb2ff", "#8ee6a2", "#ffd479", "#ff9ecb", "#b9a2ff",
@@ -80,6 +81,8 @@ class DanmakuWindow(QWidget):
 
         self.bridge = Bridge()
         self.bridge.event.connect(self.on_event)
+        self.emotes = EmoteStore(room)
+        self.emotes.ready.connect(self.render)
         conf_dir()
         self.client = DanmakuClient(room, lambda k, w: self.bridge.event.emit(k, w))
         self.client.start()
@@ -171,7 +174,7 @@ class DanmakuWindow(QWidget):
         elif kind == "danmaku":
             name = esc(data.get("user", ""))
             col = "#ff6b6b" if data.get("admin") else color_of(data.get("user"))
-            self.add_line(col, name, esc(data.get("text", "")))
+            self.add_line(col, name, self.emotes.render(data.get("text", "")))
         elif kind == "enter":
             name = data.get("user", "")
             self.add_line("#6f7c8f", "%s 进入直播间" % esc(name))
