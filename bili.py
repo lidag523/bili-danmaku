@@ -89,6 +89,27 @@ def get_danmu_info(s, room_id):
     return r, dict(s.cookies)
 
 
+def send_danmaku(s, room_id, msg, color=16777215, mode=1, fontsize=25):
+    """发一条弹幕。返回 (是否成功, 提示信息)。"""
+    jct = dict(s.cookies).get("bili_jct", "")
+    if not jct:
+        return False, "没有登录 cookie（缺 bili_jct），先填 cookie"
+    data = {
+        "bubble": "0", "msg": msg, "color": str(color), "mode": str(mode),
+        "fontsize": str(fontsize), "rnd": str(int(time.time())),
+        "roomid": str(room_id), "csrf": jct, "csrf_token": jct,
+        "reply_mid": "0", "reply_attr": "0",
+    }
+    try:
+        j = s.post("https://api.live.bilibili.com/msg/send", data=data,
+                   timeout=10).json()
+    except Exception as e:
+        return False, "网络错误: %s" % e
+    if j.get("code") == 0:
+        return True, "已发送"
+    return False, j.get("message") or ("错误码 %s" % j.get("code"))
+
+
 def req(s, url, params=None, tries=2, timeout=8):
     last = None
     for i in range(tries):

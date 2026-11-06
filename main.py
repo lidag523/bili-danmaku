@@ -3,13 +3,14 @@
 import sys
 import time
 import logging
+import threading
 from logging.handlers import RotatingFileHandler
 
 from PySide6.QtCore import Qt, QObject, Signal, QPoint, QEvent
 from PySide6.QtGui import QColor, QFont, QPainter, QBrush, QPen, QAction
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextBrowser, QPushButton, QMenu,
-                               QInputDialog, QSizeGrip)
+                               QInputDialog, QSizeGrip, QLineEdit)
 
 from danmaku import DanmakuClient
 from emotes import EmoteStore
@@ -157,6 +158,15 @@ class DanmakuWindow(QWidget):
         self.enter_view.hide()
         root.addWidget(self.enter_view, 0)
 
+        self.input = QLineEdit()
+        self.input.setPlaceholderText("发条弹幕…（回车发送）")
+        self.input.setStyleSheet(
+            "QLineEdit{background:rgba(255,255,255,18);border:1px solid #2c3140;"
+            "border-radius:6px;color:#e8eef7;font-size:12px;padding:3px 6px;}"
+            "QLineEdit:focus{border:1px solid #4a6fa5;}")
+        self.input.returnPressed.connect(self.send_danmaku)
+        root.addWidget(self.input, 0)
+
         bottom = QHBoxLayout()
         bottom.setContentsMargins(0, 0, 0, 0)
         self.status = QLabel("")
@@ -195,6 +205,11 @@ class DanmakuWindow(QWidget):
             name = esc(data.get("user", ""))
             col = "#ff6b6b" if data.get("admin") else color_of(data.get("user"))
             self.add_line(col, name, self.emotes.render(data.get("text", "")))
+        elif kind == "sent":
+            if data.get("ok"):
+                self.status.setText("已发送：%s" % data.get("text", ""))
+            else:
+                self.add_line("#ff8f8f", "⚠ 发送失败：%s" % esc(data.get("msg", "")))
         elif kind == "enter":
             self.add_enter("%s 进入直播间" % data.get("user", ""))
         elif kind == "rank":
@@ -274,6 +289,24 @@ class DanmakuWindow(QWidget):
     def toggle_enter(self, on):
         self._show_enter = bool(on)
         self.render_enter()
+
+    def send_danmaku(self):
+        text = self.input.text().strip()
+        if not text:
+            return
+        self.input.clear()
+        room = self.room
+
+        def work():
+            try:
+                import bili
+                s = bili.new_session()
+                ok, msg = bili.send_danmaku(s, room, text)
+            except Exception as e:
+                ok, msg = False, str(e)
+            self.bridge.event.emit("sent", {"ok": ok, "msg": msg, "text": text})
+
+        threading.Thread(target=work, daemon=True).start()
 
     def schedule_reconnect(self):
         from PySide6.QtCore import QTimer
