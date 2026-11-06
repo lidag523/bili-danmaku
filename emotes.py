@@ -83,7 +83,7 @@ class EmoteStore(QObject):
                         idx.setdefault(t, u)
                         toks.append(t)
                 if toks:
-                    groups.append((pkg.get("text") or "", toks))
+                    groups.append((pkg.get("text") or "", toks, False))
         except Exception:
             pass
         # 2) 直播间通用表情，token 形如 [啊]
@@ -102,7 +102,7 @@ class EmoteStore(QObject):
                         self._bare.setdefault(_norm(e.get("emoji")), tok)
                         toks.append(tok)
                 if toks:
-                    groups.append((pkg.get("pkg_name") or "直播间通用", toks))
+                    groups.append((pkg.get("pkg_name") or "直播间通用", toks, True))
         except Exception:
             pass
         if not idx:
@@ -120,17 +120,17 @@ class EmoteStore(QObject):
         self.map = m          # 一次性替换，避免边下边改
         self.live = {t: v for t, v in m.items() if t in live_tokens}
 
-        groups.sort(key=lambda g: (0 if "小黄脸" in g[0] else 1))
+        # 面板只列直播间那套表情：评论区表情（[doge]、[笑哭] 之类）直播端不认，不显示
+        # 渲染收到的弹幕仍用全量 map，别人发这些也能画出图
         seen = set()
         order = []
-        for _, toks in groups:
+        for name, toks, is_live in groups:
+            if not is_live:
+                continue
             for t in toks:
                 if t in m and t not in seen:
                     seen.add(t)
                     order.append(t)
-        for t in m:                      # 兜底，别漏
-            if t not in seen:
-                order.append(t)
         self.order = order
         if m:
             self.ready.emit()
