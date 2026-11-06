@@ -12,7 +12,8 @@ from PySide6.QtGui import (QColor, QFont, QPainter, QBrush, QPen, QAction,
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextBrowser, QPushButton, QMenu,
                                QInputDialog, QSizeGrip, QLineEdit, QFrame,
-                               QGridLayout, QScrollArea, QToolButton)
+                               QGridLayout, QScrollArea, QToolButton,
+                               QWidgetAction)
 
 from danmaku import DanmakuClient
 from emotes import EmoteStore
@@ -256,8 +257,6 @@ class DanmakuWindow(QWidget):
             if self.watched:
                 self.status.setText("%s · 看过 %s" % (
                     "直播中" if self.live else "未开播", self.watched))
-            if self.watched:
-                self.count.setText(self.watched)
         elif kind == "gift":
             self.add_line("#ffcf7f", "🎁 %s %s %s" % (
                 esc(data.get("user", "")), esc(data.get("action", "")),
@@ -298,9 +297,9 @@ class DanmakuWindow(QWidget):
             self.enter_view.hide()
             return
         self.enter_view.show()
-        self.enter_view.setHtml(
-            '<div style="line-height:130%%">%s</div>'
-            % "<br>".join(self.enter_lines))
+        blank = max(0, MAX_ENTER - len(self.enter_lines))
+        body = "".join("<br>" for _ in range(blank)) + "<br>".join(self.enter_lines)
+        self.enter_view.setHtml('<div style="line-height:130%%">%s</div>' % body)
         sb = self.enter_view.verticalScrollBar()
         sb.setValue(sb.maximum())
 
@@ -313,25 +312,35 @@ class DanmakuWindow(QWidget):
         self.input.setFocus()
 
     def show_emotes(self):
-        if getattr(self, "_emoji_pop", None):
-            self._emoji_pop.close()
-            self._emoji_pop = None
-            return
         if not getattr(self.emotes, "map", None):
             self.status.setText("表情还没加载完")
             return
 
-        pop = QFrame(self, Qt.Popup)
-        pop.setStyleSheet("QFrame{background:#1b1e26;border:1px solid #2c3140;"
-                          "border-radius:8px;}")
-        lay = QVBoxLayout(pop)
-        lay.setContentsMargins(6, 6, 6, 6)
+        menu = QMenu(self)
+        menu.setStyleSheet(
+            "QMenu{background:#1b1e26;border:1px solid #2c3140;padding:4px;}"
+            "QScrollBar:vertical{background:transparent;width:6px;}"
+            "QScrollBar::handle:vertical{background:#3a4356;border-radius:3px;}"
+            "QScrollBar::add-line,QScrollBar::sub-line{height:0;}"
+            "QScrollBar::add-page,QScrollBar::sub-page{background:transparent;}")
+
+        box = QWidget()
+        box.setFixedSize(252, 224)
+        outer = QVBoxLayout(box)
+        outer.setContentsMargins(0, 0, 0, 0)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("QScrollArea{background:transparent;border:none;}")
+        scroll.setStyleSheet("QScrollArea{background:transparent;border:none;}"
+                             "QScrollArea > QWidget > QWidget{background:transparent;}")
+        # 右下角的黑方块就是滚动区 corner widget，塞个空控件盖掉
+        corner = QWidget()
+        corner.setStyleSheet("background:transparent;")
+        scroll.setCornerWidget(corner)
+
         inner = QWidget()
+        inner.setStyleSheet("background:transparent;")
         grid = QGridLayout(inner)
         grid.setSpacing(2)
         grid.setContentsMargins(0, 0, 0, 0)
@@ -346,18 +355,17 @@ class DanmakuWindow(QWidget):
             b.setStyleSheet(
                 "QToolButton{background:transparent;border:none;}"
                 "QToolButton:hover{background:#2a3345;border-radius:4px;}")
-            b.clicked.connect(lambda _=False, t=token: self.insert_emote(t))
+            b.clicked.connect(lambda _=False, t=token: (self.insert_emote(t),
+                                                        menu.close()))
             grid.addWidget(b, i // 8, i % 8)
 
         scroll.setWidget(inner)
-        lay.addWidget(scroll)
-        pop.resize(258, 232)
+        outer.addWidget(scroll)
 
-        g = self.input.mapToGlobal(QPoint(0, 0))
-        pop.move(g.x(), max(0, g.y() - 238))
-        pop.show()
-        pop.destroyed.connect(lambda *_: setattr(self, "_emoji_pop", None))
-        self._emoji_pop = pop
+        act = QWidgetAction(menu)
+        act.setDefaultWidget(box)
+        menu.addAction(act)
+        menu.exec(self.emoji_btn.mapToGlobal(QPoint(-60, -236)))
 
     def send_danmaku(self):
         text = self.input.text().strip()
