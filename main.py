@@ -593,9 +593,23 @@ class DanmakuWindow(QWidget):
         self.raise_()
         if ok and r.strip().isdigit():
             self.room = int(r.strip())
-            self.lines.clear()
-            self.render()
+            self.reset_room_state()
             self.reconnect()
+
+    def reset_room_state(self):
+        """换房间时把上一个房间的痕迹清干净：弹幕、进场、在线榜、人数。"""
+        self.lines.clear()
+        self.enter_lines.clear()
+        self.rank.setText("")
+        self.title.setText("连接中…")
+        self.count.setText("--")
+        self.status.setText("正在连接…")
+        self.watched = ""
+        self.live = 0
+        self._online = 0
+        self.popularity = 0
+        self.render()
+        self.render_enter()
 
     def closeEvent(self, e):
         try:
