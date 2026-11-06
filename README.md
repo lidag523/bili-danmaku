@@ -18,21 +18,21 @@ B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 ### Arch Linux
 
 ```bash
-sudo pacman -U ./bili-danmaku-0.1.2.pkg.tar.zst
+sudo pacman -U ./bili-danmaku-0.1.3.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku-0.1.2.deb
+sudo apt install ./bili-danmaku-0.1.3.deb
 ```
 
 
 ### AppImage
 
 ```bash
-chmod +x bili-danmaku-0.1.2.AppImage
-./bili-danmaku-0.1.2.AppImage
+chmod +x bili-danmaku-0.1.3.AppImage
+./bili-danmaku-0.1.3.AppImage
 ```
 
 
