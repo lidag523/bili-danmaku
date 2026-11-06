@@ -227,7 +227,13 @@ class DanmakuWindow(QWidget):
         elif kind == "danmaku":
             name = esc(data.get("user", ""))
             col = "#ff6b6b" if data.get("admin") else color_of(data.get("user"))
-            self.add_line(col, name, self.emotes.render(data.get("text", "")))
+            body = self.emotes.render(data.get("text", ""))
+            reply = data.get("reply") or ""
+            if reply:
+                # 回复类弹幕：正文里没有「@谁」，要自己补上
+                body = ('<span style="color:#7fb2ff">@%s</span> %s'
+                        % (esc(reply), body))
+            self.add_line(col, name, body)
         elif kind == "history":
             if data.get("room") != self.room:
                 return

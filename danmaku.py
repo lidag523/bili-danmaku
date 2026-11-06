@@ -184,8 +184,9 @@ class DanmakuClient:
             j = json.loads(body.decode("utf-8"))
         except Exception:
             return
-        cmd = j.get("cmd", "")
-        if cmd.startswith("DANMU_MSG"):
+        # cmd 常带 ":12345" 后缀，先剥掉，否则下面 == 比较会失配
+        cmd = (j.get("cmd", "") or "").split(":")[0]
+        if cmd == "DANMU_MSG":
             info = j.get("info") or []
             try:
                 text = info[1]
@@ -193,7 +194,14 @@ class DanmakuClient:
                 admin = bool(info[2][2])
             except Exception:
                 return
-            self._emit("danmaku", user=user, text=text, admin=admin)
+            reply = ""
+            try:
+                extra = json.loads(info[0][15].get("extra") or "{}")
+                reply = extra.get("reply_uname") or ""
+            except Exception:
+                pass
+            self._emit("danmaku", user=user, text=text, admin=admin,
+                       reply=reply)
         elif cmd == "INTERACT_WORD":
             d = j.get("data") or {}
             if d.get("msg_type") == 1:
