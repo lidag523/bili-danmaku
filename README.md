@@ -24,21 +24,21 @@ B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 ### Arch Linux
 
 ```bash
-sudo pacman -U ./bili-danmaku-0.1.5.pkg.tar.zst
+sudo pacman -U ./bili-danmaku-0.1.7.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku-0.1.5.deb
+sudo apt install ./bili-danmaku-0.1.7.deb
 ```
 
 
 ### AppImage
 
 ```bash
-chmod +x bili-danmaku-0.1.5.AppImage
-./bili-danmaku-0.1.5.AppImage
+chmod +x bili-danmaku-0.1.7.AppImage
+./bili-danmaku-0.1.7.AppImage
 ```
 
 
@@ -124,20 +124,20 @@ A floating window for Bilibili live chat, made for Linux (PySide6 + Qt6).
 ### Arch Linux
 
 ```bash
-sudo pacman -U ./bili-danmaku-0.1.5.pkg.tar.zst
+sudo pacman -U ./bili-danmaku-0.1.7.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku-0.1.5.deb
+sudo apt install ./bili-danmaku-0.1.7.deb
 ```
 
 ### AppImage
 
 ```bash
-chmod +x bili-danmaku-0.1.5.AppImage
-./bili-danmaku-0.1.5.AppImage
+chmod +x bili-danmaku-0.1.7.AppImage
+./bili-danmaku-0.1.7.AppImage
 ```
 
 ### Run from source
