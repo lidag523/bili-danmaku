@@ -1,6 +1,6 @@
 # Maintainer: Lavalucky <you@example.com>
 pkgname=bili-danmaku
-pkgver=0.1.6
+pkgver=0.1.7
 pkgrel=1
 pkgdesc="B站直播弹幕悬浮窗 (弹幕/进场/在线人数)"
 arch=('any')
@@ -8,8 +8,8 @@ url="https://live.bilibili.com/"
 license=('MIT')
 depends=('python' 'pyside6' 'python-requests' 'python-websocket-client' 'python-brotli')
 options=('!strip')
-source=("main.py" "danmaku.py" "bili.py" "pb.py" "emotes.py" "bili-danmaku.sh")
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
+source=("main.py" "danmaku.py" "bili.py" "pb.py" "emotes.py" "i18n.py" "bili-danmaku.sh")
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 prepare() {
   cd "$srcdir"
@@ -19,7 +19,7 @@ prepare() {
 package() {
   install -d "$pkgdir/usr/lib/bili-danmaku"
   install -m644 "$srcdir/main.py" "$srcdir/danmaku.py" "$srcdir/bili.py" \
-    "$srcdir/pb.py" "$srcdir/emotes.py" "$pkgdir/usr/lib/bili-danmaku/"
+    "$srcdir/pb.py" "$srcdir/emotes.py" "$srcdir/i18n.py" "$pkgdir/usr/lib/bili-danmaku/"
   install -Dm755 "$srcdir/bili-danmaku.sh" "$pkgdir/usr/bin/bili-danmaku"
   install -Dm644 /dev/stdin "$pkgdir/usr/share/doc/$pkgname/README.md" <<'DOC'
 # bili-danmaku

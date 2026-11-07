@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 
 from danmaku import DanmakuClient
 from emotes import EmoteStore
+from i18n import tr, is_english, lang, set_lang
 
 MAX_LINES = 60
 MAX_ENTER = 4      # 进场消息最多留几条
@@ -80,7 +81,7 @@ class DanmakuWindow(QWidget):
         self._drag = None
         self._online = 0
 
-        self.setWindowTitle("B站弹幕")
+        self.setWindowTitle(tr("B站弹幕"))
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setMouseTracking(True)
@@ -108,7 +109,7 @@ class DanmakuWindow(QWidget):
 
         head = QHBoxLayout()
         head.setSpacing(6)
-        self.title = QLabel("连接中…")
+        self.title = QLabel(tr("连接中…"))
         self.title.setStyleSheet("color:#eaf2ff;font-size:13px;font-weight:600;")
         head.addWidget(self.title, 1)
 
@@ -164,7 +165,7 @@ class DanmakuWindow(QWidget):
         root.addWidget(self.enter_view, 0)
 
         self.input = QLineEdit()
-        self.input.setPlaceholderText("发条弹幕…（回车发送）")
+        self.input.setPlaceholderText(tr("发条弹幕…（回车发送）"))
         self.input.setStyleSheet(
             "QLineEdit{background:rgba(255,255,255,18);border:1px solid #2c3140;"
             "border-radius:6px;color:#e8eef7;font-size:12px;padding:3px 6px;}"
@@ -179,7 +180,7 @@ class DanmakuWindow(QWidget):
         self.emoji_btn = QPushButton("😊")
         self.emoji_btn.setFixedSize(26, 26)
         self.emoji_btn.setCursor(Qt.PointingHandCursor)
-        self.emoji_btn.setToolTip("插入表情")
+        self.emoji_btn.setToolTip(tr("插入表情"))
         self.emoji_btn.setStyleSheet(
             "QPushButton{background:rgba(255,255,255,18);border:1px solid #2c3140;"
             "border-radius:6px;font-size:13px;}"
@@ -209,11 +210,11 @@ class DanmakuWindow(QWidget):
         if kind in ("status", "error", "room", "room_online"):
             log.info("%s %s", kind, data)
         if kind == "room":
-            self.title.setText(data.get("title") or "直播间")
+            self.title.setText(data.get("title") or tr("直播间"))
             self.live = data.get("live", 0)
-            self.status.setText("直播中" if self.live else "未开播")
+            self.status.setText(tr("直播中") if self.live else tr("未开播"))
             if data.get("online"):
-                self.count.setText("人气 %s" % self._fmt(data["online"]))
+                self.count.setText(tr("人气 %s") % self._fmt(data["online"]))
         elif kind == "status":
             self.status.setText(data.get("msg", ""))
             if data.get("msg") == "已连接":
@@ -222,7 +223,7 @@ class DanmakuWindow(QWidget):
         elif kind == "error":
             if not self.lines or "⚠" not in self.lines[-1]:
                 self.add_line("#ff8f8f", "⚠ %s" % data.get("msg", ""))
-            self.status.setText("连接异常，20 秒后重连")
+            self.status.setText(tr("连接异常，20 秒后重连"))
             self.schedule_reconnect()
         elif kind == "danmaku":
             name = esc(data.get("user", ""))
@@ -244,15 +245,16 @@ class DanmakuWindow(QWidget):
                               self.emotes.render(it.get("text", "")))
         elif kind == "sent":
             if data.get("ok"):
-                self.status.setText("已发送：%s" % data.get("text", ""))
+                self.status.setText(tr("已发送：%s") % data.get("text", ""))
             else:
-                self.add_line("#ff8f8f", "⚠ 发送失败：%s" % esc(data.get("msg", "")))
+                self.add_line("#ff8f8f", tr("⚠ 发送失败：%s") % esc(data.get("msg", "")))
         elif kind == "enter":
-            self.add_enter("%s 进入直播间" % data.get("user", ""))
+            self.add_enter(tr("%s 进入直播间") % data.get("user", ""))
         elif kind == "rank":
             users = data.get("users") or []
+            self._rank_users = users
             if users:
-                self.rank.setText("在线榜：" + " · ".join(
+                self.rank.setText(tr("在线榜：") + " · ".join(
                     "%d.%s" % (i, esc(u.get("name", "")))
                     for i, u in enumerate(users, 1)))
             else:
@@ -261,20 +263,20 @@ class DanmakuWindow(QWidget):
             v = data.get("value", 0)
             if v > 1 and not self._online:
                 self._online = v
-                self.count.setText("人气 %s" % self._fmt(v))
+                self.count.setText(tr("人气 %s") % self._fmt(v))
         elif kind == "room_online":
             self._online = data.get("online", 0)
             self.live = data.get("live", self.live)
-            self.count.setText("人气 %s" % self._fmt(self._online))
+            self.count.setText(tr("人气 %s") % self._fmt(self._online))
             if data.get("title"):
                 self.title.setText(data["title"])
             if not self.live:
-                self.status.setText("未开播")
+                self.status.setText(tr("未开播"))
         elif kind == "watched":
             self.watched = data.get("text", "")
             if self.watched:
-                self.status.setText("%s · 看过 %s" % (
-                    "直播中" if self.live else "未开播", self.watched))
+                self.status.setText(tr("%s · 看过 %s") % (
+                    tr("直播中") if self.live else tr("未开播"), self.watched))
         elif kind == "gift":
             self.add_line("#ffcf7f", "🎁 %s %s %s" % (
                 esc(data.get("user", "")), esc(data.get("action", "")),
@@ -282,6 +284,12 @@ class DanmakuWindow(QWidget):
 
     def _fmt(self, n):
         n = int(n)
+        if is_english():
+            if n >= 1000000:
+                return "%.1fM" % (n / 1000000)
+            if n >= 1000:
+                return "%.1fk" % (n / 1000)
+            return str(n)
         return "%.1f万" % (n / 10000) if n >= 10000 else str(n)
 
     def add_line(self, color, *parts):
@@ -404,7 +412,7 @@ class DanmakuWindow(QWidget):
 
     def show_emotes(self):
         if not getattr(self.emotes, "map", None):
-            self.status.setText("表情还没加载完")
+            self.status.setText(tr("表情还没加载完"))
             return
         menu = getattr(self, "_emoji_menu", None)
         if menu is None or getattr(self, "_emoji_n", -1) != len(getattr(self.emotes, "order", None) or self.emotes.map):
@@ -440,8 +448,8 @@ class DanmakuWindow(QWidget):
             ck = {}
         if not ck.get("bili_jct"):
             # 没填 cookie 就别发出去了，直接提示
-            self.status.setText("未填写Cookie")
-            self.add_line("#ff8f8f", "未填写Cookie（右键 → 填 / 改 cookie…）")
+            self.status.setText(tr("未填写Cookie"))
+            self.add_line("#ff8f8f", tr("未填写Cookie（右键 → 填 / 改 cookie…）"))
             return
         self.input.clear()
         room = self.room
@@ -462,7 +470,7 @@ class DanmakuWindow(QWidget):
         QTimer.singleShot(20000, self.reconnect)
 
     def reconnect(self):
-        self.status.setText("正在重连…")
+        self.status.setText(tr("正在重连…"))
         try:
             self.client.stop()
         except Exception:
@@ -591,18 +599,48 @@ class DanmakuWindow(QWidget):
         m.setStyleSheet("QMenu{background:#1b1e26;color:#dfe6f2;"
                         "border:1px solid #2c3140;} QMenu::item:selected"
                         "{background:#2a3345;}")
-        m.addAction("换个直播间…", self.change_room)
-        m.addAction("填 / 改 cookie…", self.set_cookie)
-        m.addAction("重新连接", self.reconnect)
-        act = m.addAction("显示进场消息")
+        m.addAction(tr("换个直播间…"), self.change_room)
+        m.addAction(tr("填 / 改 cookie…"), self.set_cookie)
+        m.addAction(tr("重新连接"), self.reconnect)
+        lang_menu = m.addMenu("语言 / Language")
+        for code, label in (("zh", "中文"), ("en", "English")):
+            a = lang_menu.addAction(label)
+            a.setCheckable(True)
+            a.setChecked(lang() == code)
+            a.triggered.connect(lambda _=False, c=code: self.switch_lang(c))
+
+        act = m.addAction(tr("显示进场消息"))
         act.setCheckable(True)
         act.setChecked(self._show_enter)
         act.toggled.connect(self.toggle_enter)
-        m.addAction("清屏", lambda: (self.lines.clear(), self.enter_lines.clear(),
+        m.addAction(tr("清屏"), lambda: (self.lines.clear(), self.enter_lines.clear(),
                                     self.render(), self.render_enter()))
         m.addSeparator()
-        m.addAction("退出", self.close)
+        m.addAction(tr("退出"), self.close)
         m.exec(pos)
+
+    def switch_lang(self, code):
+        if not set_lang(code):
+            return
+        self.retranslate()
+
+    def retranslate(self):
+        self.setWindowTitle(tr("B站弹幕"))
+        self.input.setPlaceholderText(tr("发条弹幕…（回车发送）"))
+        self.emoji_btn.setToolTip(tr("插入表情"))
+        # 右上角人气、左下状态、在线榜都按当前语言重排一次
+        self.count.setText(tr("人气 %s") % self._fmt(self._online)
+                           if self._online else "--")
+        state = tr("直播中") if self.live else tr("未开播")
+        self.status.setText(tr("%s · 看过 %s") % (state, self.watched)
+                            if self.watched else state)
+        users = getattr(self, "_rank_users", None) or []
+        if users:
+            self.rank.setText(tr("在线榜：") + " · ".join(
+                "%d.%s" % (i, esc(u.get("name", "")))
+                for i, u in enumerate(users, 1)))
+        self.render()
+        self.render_enter()
 
     def set_cookie(self):
         old = ""
@@ -611,9 +649,9 @@ class DanmakuWindow(QWidget):
         except Exception:
             pass
         text, ok = QInputDialog.getMultiLineText(
-            self, "登录 cookie",
-            "把浏览器里请求头那一整行 Cookie 粘进来\n"
-            "（至少要含 SESSDATA）：", old)
+            self, tr("登录 cookie"),
+            tr("把浏览器里请求头那一整行 Cookie 粘进来\n"
+               "（至少要含 SESSDATA）："), old)
         if not ok:
             self.show()
             self.raise_()
@@ -625,7 +663,7 @@ class DanmakuWindow(QWidget):
         self.reconnect()
 
     def change_room(self):
-        r, ok = QInputDialog.getText(self, "换房间", "直播间号：", text=str(self.room))
+        r, ok = QInputDialog.getText(self, tr("换房间"), tr("直播间号："), text=str(self.room))
         self.show()
         self.raise_()
         if ok and r.strip().isdigit():
@@ -639,9 +677,9 @@ class DanmakuWindow(QWidget):
         self.lines.clear()
         self.enter_lines.clear()
         self.rank.setText("")
-        self.title.setText("连接中…")
+        self.title.setText(tr("连接中…"))
         self.count.setText("--")
-        self.status.setText("正在连接…")
+        self.status.setText(tr("正在连接…"))
         self.watched = ""
         self.live = 0
         self._online = 0
@@ -671,7 +709,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1].strip().isdigit():
         room = int(sys.argv[1].strip())
     else:
-        text, ok = QInputDialog.getText(None, "直播间号", "输入直播间号：")
+        text, ok = QInputDialog.getText(None, tr("直播间号"), tr("输入直播间号："))
         if not ok or not text.strip().isdigit():
             sys.exit(0)
         room = int(text.strip())
