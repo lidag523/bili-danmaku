@@ -1,10 +1,10 @@
 # bili-danmaku
 
-[中文](#中文说明) · [English](#english)
+[中文](#中文) · [English](#english)
 
 > **纯 AI 生成（DeepSeek）**
 
-## 中文说明
+## 中文
 
 B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 
