@@ -105,6 +105,14 @@ bili-danmaku [直播间号]
 ~/.config/bili-danmaku/lang.txt
 ```
 
+## 作者与贡献
+
+- 初始版本与最早几个提交：Lavalucky（[@LuckyLava](https://github.com/LuckyLava)）
+- 维护：lidag523
+
+> 说明：早期整理提交历史时执行过一次 `filter-branch`，把最早 3 个提交的作者信息一并改写成了维护者身份，
+> 原始署名因此没有保留下来。这里补记一下，感谢最初的实现。
+
 ## 日志
 
 ```
@@ -226,6 +234,15 @@ switch it from the right-click menu ("语言 / Language"); the choice is saved t
 ```
 ~/.config/bili-danmaku/lang.txt
 ```
+
+## Credits
+
+- Initial version and the earliest commits: Lavalucky ([@LuckyLava](https://github.com/LuckyLava))
+- Maintainer: lidag523
+
+> Note: an early `filter-branch` history rewrite overwrote the authorship of the first three
+> commits with the maintainer's identity, so the original attribution was lost. Recording it
+> here to give credit where it is due.
 
 ## Logs
 
