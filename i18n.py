@@ -42,6 +42,9 @@ _EN = {
     "清屏": "Clear",
     "退出": "Quit",
 
+    # 顶部按钮
+    "打开 GitHub 仓库": "Open GitHub repository",
+
     # 对话框
     "换房间": "Change room",
     "直播间号": "Room ID",

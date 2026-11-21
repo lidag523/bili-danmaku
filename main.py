@@ -6,9 +6,11 @@ import logging
 import threading
 from logging.handlers import RotatingFileHandler
 
-from PySide6.QtCore import Qt, QObject, Signal, QPoint, QEvent, QSize
+from PySide6.QtCore import (Qt, QObject, Signal, QPoint, QEvent, QSize, QUrl,
+                            QByteArray)
 from PySide6.QtGui import (QColor, QFont, QPainter, QBrush, QPen, QAction,
-                           QIcon)
+                           QIcon, QPixmap, QDesktopServices)
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
                                QLabel, QTextBrowser, QPushButton, QMenu,
                                QInputDialog, QSizeGrip, QLineEdit, QFrame,
@@ -24,6 +26,35 @@ MAX_ENTER = 4      # 进场消息最多留几条
 ENTER_H = 88       # 进场区域高度(px)
 COLORS = ["#7fb2ff", "#8ee6a2", "#ffd479", "#ff9ecb", "#b9a2ff",
           "#7fe3e3", "#ffab8f", "#c8e08b"]
+
+REPO_URL = "https://github.com/lidag523/bili-danmaku"
+
+# GitHub mark 的路径（simple-icons，CC0），只画轮廓不依赖图片资源
+_GITHUB_MARK = (
+    "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385"
+    ".6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61"
+    "-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729"
+    ".084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305"
+    " 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93"
+    " 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322"
+    " 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405"
+    " 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176"
+    ".765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92"
+    ".42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69"
+    ".825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12")
+
+
+def github_icon(color="#9aa7b8", size=16):
+    """把 GitHub mark 画成图标用，省掉图片资源文件。"""
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+           '<path fill="%s" d="%s"/></svg>' % (color, _GITHUB_MARK))
+    renderer = QSvgRenderer(QByteArray(svg.encode("utf-8")))
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.end()
+    return QIcon(pixmap)
 
 
 def color_of(name):
@@ -117,6 +148,18 @@ class DanmakuWindow(QWidget):
         self.count.setStyleSheet("color:#9fd4ff;font-size:12px;")
         head.addWidget(self.count)
 
+        self.repo_btn = QPushButton()
+        self.repo_btn.setIcon(github_icon())
+        self.repo_btn.setIconSize(QSize(16, 16))
+        self.repo_btn.setFixedSize(20, 20)
+        self.repo_btn.setCursor(Qt.PointingHandCursor)
+        self.repo_btn.setToolTip(tr("打开 GitHub 仓库"))
+        self.repo_btn.setStyleSheet(
+            "QPushButton{border:none;background:transparent;border-radius:4px;}"
+            "QPushButton:hover{background:rgba(255,255,255,20);}")
+        self.repo_btn.clicked.connect(self.open_repo)
+        head.addWidget(self.repo_btn, 0)
+
         close = QPushButton("✕")
         close.setFixedSize(20, 20)
         close.setCursor(Qt.PointingHandCursor)
@@ -195,6 +238,10 @@ class DanmakuWindow(QWidget):
         self.status.setStyleSheet("color:#6f7c8f;font-size:11px;")
         bottom.addWidget(self.status, 1)
         root.addLayout(bottom)
+
+    def open_repo(self):
+        """点 GitHub 图标，用系统默认浏览器打开仓库主页。"""
+        QDesktopServices.openUrl(QUrl(REPO_URL))
 
     def paintEvent(self, e):
         p = QPainter(self)
@@ -628,6 +675,7 @@ class DanmakuWindow(QWidget):
         self.setWindowTitle(tr("B站弹幕"))
         self.input.setPlaceholderText(tr("发条弹幕…（回车发送）"))
         self.emoji_btn.setToolTip(tr("插入表情"))
+        self.repo_btn.setToolTip(tr("打开 GitHub 仓库"))
         # 右上角人气、左下状态、在线榜都按当前语言重排一次
         self.count.setText(tr("人气 %s") % self._fmt(self._online)
                            if self._online else "--")

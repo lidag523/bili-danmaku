@@ -1,12 +1,14 @@
 # bili-danmaku
 
-[中文](#中文说明) · [English](#english)
+[中文](#中文) · [English](#english)
 
 > **纯 AI 生成（DeepSeek）**
 
-## 中文说明
+## 中文
 
 B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
+
+![截图](docs/images/preview/screenshot.png)
 
 ## 功能
 
@@ -24,21 +26,21 @@ B 站直播弹幕悬浮窗，给 Linux 用的（PySide6 + Qt6）。
 ### Arch Linux
 
 ```bash
-sudo pacman -U ./bili-danmaku-0.1.5.pkg.tar.zst
+sudo pacman -U ./bili-danmaku-0.1.7.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku-0.1.5.deb
+sudo apt install ./bili-danmaku-0.1.7.deb
 ```
 
 
 ### AppImage
 
 ```bash
-chmod +x bili-danmaku-0.1.5.AppImage
-./bili-danmaku-0.1.5.AppImage
+chmod +x bili-danmaku-0.1.7.AppImage
+./bili-danmaku-0.1.7.AppImage
 ```
 
 
@@ -48,6 +50,24 @@ chmod +x bili-danmaku-0.1.5.AppImage
 python3 -m venv .venv
 .venv/bin/pip install PySide6 requests websocket-client brotli
 .venv/bin/python main.py [直播间号]
+```
+
+### 用 uv 运行（不建虚拟环境）
+
+本机装了 [uv](https://docs.astral.sh/uv/) 的话，可以一行起，依赖由 uv 自己拉、自己缓存：
+
+```bash
+uv run --with PySide6 --with requests --with websocket-client --with brotli \
+  main.py [直播间号]
+```
+
+第一次会下载依赖（PySide6 体积较大），之后走缓存，秒起。
+
+想复用系统里已经装好的 PySide6，就换成：
+
+```bash
+uv venv --system-site-packages .venv
+uv run main.py [直播间号]
 ```
 
 ## 用法
@@ -108,6 +128,8 @@ MIT
 
 A floating window for Bilibili live chat, made for Linux (PySide6 + Qt6).
 
+![Screenshot](docs/images/preview/screenshot.png)
+
 ## Features
 
 - Scrolling live chat (danmaku)
@@ -124,20 +146,20 @@ A floating window for Bilibili live chat, made for Linux (PySide6 + Qt6).
 ### Arch Linux
 
 ```bash
-sudo pacman -U ./bili-danmaku-0.1.5.pkg.tar.zst
+sudo pacman -U ./bili-danmaku-0.1.7.pkg.tar.zst
 ```
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt install ./bili-danmaku-0.1.5.deb
+sudo apt install ./bili-danmaku-0.1.7.deb
 ```
 
 ### AppImage
 
 ```bash
-chmod +x bili-danmaku-0.1.5.AppImage
-./bili-danmaku-0.1.5.AppImage
+chmod +x bili-danmaku-0.1.7.AppImage
+./bili-danmaku-0.1.7.AppImage
 ```
 
 ### Run from source
@@ -146,6 +168,26 @@ chmod +x bili-danmaku-0.1.5.AppImage
 python3 -m venv .venv
 .venv/bin/pip install PySide6 requests websocket-client brotli
 .venv/bin/python main.py [room_id]
+```
+
+### Run with uv (no manual venv)
+
+If you have [uv](https://docs.astral.sh/uv/) installed, a single command pulls and
+caches the dependencies for you:
+
+```bash
+uv run --with PySide6 --with requests --with websocket-client --with brotli \
+  main.py [room_id]
+```
+
+The first run downloads the dependencies (PySide6 is large); later runs are
+instant thanks to uv's cache.
+
+To reuse the PySide6 already installed on your system instead:
+
+```bash
+uv venv --system-site-packages .venv
+uv run main.py [room_id]
 ```
 
 ## Usage
