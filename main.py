@@ -675,6 +675,7 @@ class DanmakuWindow(QWidget):
         self.setWindowTitle(tr("B站弹幕"))
         self.input.setPlaceholderText(tr("发条弹幕…（回车发送）"))
         self.emoji_btn.setToolTip(tr("插入表情"))
+        self.repo_btn.setToolTip(tr("打开 GitHub 仓库"))
         # 右上角人气、左下状态、在线榜都按当前语言重排一次
         self.count.setText(tr("人气 %s") % self._fmt(self._online)
                            if self._online else "--")
